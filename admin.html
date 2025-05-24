@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Portal</title>
+    <link href="bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="logo.png">
+    <style>
+        body {
+            background: linear-gradient(to bottom, #ffcc00, #ff9900);
+            color: #000;
+        }
+        .card {
+            border: 2px solid #000;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .card-header {
+            background-color: #ffcc00;
+            color: #000;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background-color: #ff9900;
+            border-color: #ff9900;
+        }
+        .btn-success {
+            background-color: #ffcc00;
+            border-color: #ffcc00;
+            color: #000;
+        }
+        .btn-primary:hover, .btn-success:hover {
+            background-color: #ff6600;
+            border-color: #ff6600;
+        }
+        h2 {
+            font-family: 'Arial Black', sans-serif;
+            color: #000;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="text-center mb-4">
+            <img src="logo.png" alt="Logo" style="width: 100px; height: auto;">
+            <h2>Admin Portal</h2>
+        </div>
+
+        <!-- Add Voter -->
+        <div class="card mb-4">
+            <div class="card-header">Register Voter</div>
+            <div class="card-body">
+                <input id="voterId" class="form-control mb-2" placeholder="Voter ID">
+                <input id="voterPass" type="password" class="form-control mb-3" placeholder="Password">
+                <button class="btn btn-primary w-100" onclick="addVoter()">Add Voter</button>
+            </div>
+        </div>
+
+        <!-- Add Candidate -->
+        <div class="card mb-4">
+            <div class="card-header">Register Candidate</div>
+            <div class="card-body">
+                <input id="candidateName" class="form-control mb-3" placeholder="Candidate Name">
+                <button class="btn btn-success w-100" onclick="addCandidate()">Add Candidate</button>
+            </div>
+        </div>
+
+        <!-- Bulk Register Voters -->
+        <div class="card mb-4">
+            <div class="card-header">Bulk Register Voters</div>
+            <div class="card-body">
+                <input type="file" class="form-control mb-3" accept=".xlsx,.csv" onchange="handleFileUpload(event)">
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">Admin Account Management</div>
+            <div class="card-body">
+                <button class="btn btn-danger w-100 mb-2" onclick="deleteAdminAccount()">Delete Admin Account</button>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">Election Management</div>
+            <div class="card-body">
+                <button class="btn btn-warning w-100 mb-2" onclick="resetElection()">Reset Election</button>
+                <button class="btn btn-success w-100" onclick="startNewElection()">Start New Election</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Election Results</div>
+            <div class="card-body">
+                <a href="result.html"><button class="btn btn-success w-100">Live Results</button></a>
+            </div>    
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        function addVoter() {
+            const id = document.getElementById('voterId').value;
+            const pass = document.getElementById('voterPass').value;
+            if (!id || !pass) return alert('Fill all fields');
+
+            fetch('https://techharbor-f07b47c06695.herokuapp.com/add-voter', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ voter_id: id, password: pass })
+            })
+            .then(res => res.text())
+            .then(alert)
+            .catch(() => alert('Error'));
+        }
+
+        function addCandidate() {
+            const name = document.getElementById('candidateName').value;
+            if (!name) return alert('Enter candidate name');
+
+            fetch('https://techharbor-f07b47c06695.herokuapp.com/add-candidate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            })
+            .then(res => res.text())
+            .then(alert)
+            .catch(() => alert('Error'));
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return alert('Please upload a file.');
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                if (rows.length < 2 || rows[0][0] !== 'userid' || rows[0][1] !== 'password') {
+                    return alert('Invalid file format. Ensure the first row contains "userid" and "password".');
+                }
+
+                const voters = [];
+                for (let i = 1; i < rows.length; i++) {
+                    const [userid, password] = rows[i];
+                    if (userid && password) {
+                        voters.push({ voter_id: userid, password });
+                    }
+                }
+                fetch('https://techharbor-f07b47c06695.herokuapp.com/bulk-add-voters', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ voters })
+                })
+                .then(res => res.text())
+                .then(alert)
+                .catch(() => alert('Error'));
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function deleteAdminAccount() {
+            if (confirm('Are you sure you want to delete the admin account? This action cannot be undone.')) {
+                fetch('https://techharbor-f07b47c06695.herokuapp.com/delete-admin', {
+                    method: 'DELETE'
+                })
+                .then(res => res.text())
+                .then(alert)
+                .catch(() => alert('Error'));
+            }
+        }
+
+        function resetElection() {
+            if (confirm('Are you sure you want to reset the election? All votes and voter data will be cleared.')) {
+                fetch('https://techharbor-f07b47c06695.herokuapp.com/reset-election', {
+                    method: 'POST'
+                })
+                .then(res => res.text())
+                .then(alert)
+                .catch(() => alert('Error'));
+            }
+        }
+
+        function startNewElection() {
+            if (confirm('Are you sure you want to start a new election? This will clear all previous data.')) {
+                fetch('https://techharbor-f07b47c06695.herokuapp.com/start-new-election', {
+                    method: 'POST'
+                })
+                .then(res => res.text())
+                .then(alert)
+                .catch(() => alert('Error'));
+            }
+        }
+    </script>
+    <script src="bootstrap.bundle.min.js"></script>
+</body>
+</html>

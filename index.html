@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Home - Voting System</title>
+    <link href="bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="logo.png">
+    <style>
+        body {
+            background: linear-gradient(to bottom, #ffcc00, #ff9900);
+            color: #000;
+        }
+        .card {
+            border: 2px solid #000;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .card-header {
+            background-color: #ffcc00;
+            color: #000;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background-color: #ff9900;
+            border-color: #ff9900;
+        }
+        .btn-success {
+            background-color: #ffcc00;
+            border-color: #ffcc00;
+            color: #000;
+        }
+        .btn-primary:hover, .btn-success:hover {
+            background-color: #ff6600;
+            border-color: #ff6600;
+        }
+        h2 {
+            font-family: 'Arial Black', sans-serif;
+            color: #000;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="text-center mb-4">
+            <img src="logo.png" alt="Logo" style="width: 100px; height: auto;">
+            <h2>Voting System</h2>
+        </div>
+
+        <!-- Registration -->
+        <div class="card mb-4">
+            <div class="card-header">Register</div>
+            <div class="card-body">
+                <input id="regEmail" type="email" class="form-control mb-2" placeholder="Enter Email">
+                <input id="regPassword" type="password" class="form-control mb-3" placeholder="Enter Password">
+                <button class="btn btn-primary w-100" onclick="register()">Register</button>
+            </div>
+        </div>
+
+        <!-- Admin Login -->
+        <div class="card">
+            <div class="card-header">Admin Login</div>
+            <div class="card-body">
+                <input id="adminEmail" type="email" class="form-control mb-2" placeholder="Enter Admin Email">
+                <input id="adminPassword" type="password" class="form-control mb-3" placeholder="Enter Password">
+                <button class="btn btn-success w-100" onclick="login()">Login as Admin</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function register() {
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            if (email && password) {
+                fetch('https://techharbor-f07b47c06695.herokuapp.com/register-admin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                })
+                .then(res => {
+                    if (res.ok) {
+                        return res.text();
+                    } else {
+                        throw new Error('Failed to register. Please check your input or try again later.');
+                    }
+                })
+                .then(alert)
+                .catch(err => alert(err.message));
+            } else {
+                alert('Please enter all fields.');
+            }
+        }
+
+        function login() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            fetch('https://techharbor-f07b47c06695.herokuapp.com/login-admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            })
+            .then(res => {
+                if (res.ok) {
+                    window.location.href = 'admin.html';
+                } else {
+                    alert('Invalid credentials');
+                }
+            })
+            .catch(() => alert('Error'));
+        }
+    </script>
+    <script src="bootstrap.bundle.min.js"></script>
+</body>
+</html>

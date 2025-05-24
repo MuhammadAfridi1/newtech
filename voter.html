@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Voter Portal</title>
+    <link href="bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="logo.png">
+    <style>
+        body {
+            background: linear-gradient(to bottom, #ffcc00, #ff9900);
+            color: #000;
+        }
+        .card {
+            border: 2px solid #000;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .card-header {
+            background-color: #ffcc00;
+            color: #000;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background-color: #ff9900;
+            border-color: #ff9900;
+        }
+        .btn-primary:hover {
+            background-color: #ff6600;
+            border-color: #ff6600;
+        }
+        h2 {
+            font-family: 'Arial Black', sans-serif;
+            color: #000;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="text-center mb-4">
+            <img src="logo.png" alt="Logo" style="width: 100px; height: auto;">
+            <h2>Voter Login</h2>
+        </div>
+
+        <div id="loginForm" class="card mb-4">
+            <div class="card-body">
+                <input id="voterLoginId" class="form-control mb-2" placeholder="Voter ID">
+                <input id="voterLoginPass" type="password" class="form-control mb-3" placeholder="Password">
+                <button class="btn btn-primary w-100" onclick="voterLogin()">Login</button>
+            </div>
+        </div>
+
+        <div id="votingArea" class="card" style="display:none;">
+            <div class="card-header">Cast Your Vote</div>
+            <div class="card-body" id="candidateList"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentVoter = null;
+
+        function voterLogin() {
+            const id = document.getElementById('voterLoginId').value;
+            const pass = document.getElementById('voterLoginPass').value;
+
+            fetch('https://techharbor-f07b47c06695.herokuapp.com/voter-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ voter_id: id, password: pass })
+            })
+            .then(res => {
+                if (res.ok) {
+                    currentVoter = id;
+                    document.getElementById('loginForm').style.display = 'none';
+                    document.getElementById('votingArea').style.display = 'block';
+                    showCandidates();
+                } else {
+                    alert('Invalid credentials or vote already cast.');
+                }
+            })
+            .catch(() => alert('Error'));
+        }
+
+        function showCandidates() {
+            fetch('https://techharbor-f07b47c06695.herokuapp.com/candidates')
+                .then(res => res.json())
+                .then(candidates => {
+                    const container = document.getElementById('candidateList');
+                    container.innerHTML = '';
+                    candidates.forEach(candidate => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn btn-outline-primary w-100 mb-2';
+                        btn.innerText = candidate.name;
+                        btn.onclick = () => castVote(candidate.id);
+                        container.appendChild(btn);
+                    });
+                });
+        }
+
+        function castVote(candidateId) {
+            fetch('https://techharbor-f07b47c06695.herokuapp.com/vote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ voter_id: currentVoter, candidate_id: candidateId })
+            })
+            .then(res => res.text())
+            .then(msg => {
+                alert(msg);
+                window.location.reload();
+            })
+            .catch(() => alert('Error'));
+        }
+    </script>
+    <script src="bootstrap.bundle.min.js"></script>
+</body>
+</html>
