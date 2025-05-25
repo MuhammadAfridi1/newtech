@@ -95,5 +95,24 @@ app.get('/results', (req, res) => {
   });
 });
 
+// reset elections
+app.post('/reset-election', (req, res) => {
+  db.query('UPDATE voters SET voted = FALSE', err => {
+    if (err) return res.status(500).send('Error resetting voters');
+    db.query('UPDATE candidates SET votes = 0', err2 => {
+      if (err2) return res.status(500).send('Error resetting candidates');
+      res.send('Election reset');
+    });
+  });
+});
+
+// Delete admin account
+app.delete('/delete-admin', (req, res) => {
+  db.query('DELETE FROM admins', err => {
+    if (err) return res.status(500).send('Error deleting admin');
+    res.send('Admin account(s) deleted');
+  });
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log('Server running on port', PORT));
